@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CombinedView">
+        <!-- 头像的背景色 -->
+        <attr name="combined_backgroundColor" format="color" />
+        <!-- 头像的形状，圆角方形和圆形 -->
+        <attr name="combined_shape" format="enum">
+            <enum name="round" value="1" />
+            <enum name="circle" value="2" />
+        </attr>
+        <!-- 圆角方形的圆角半径-->
+        <attr name="combined_roundRadius" format="dimension" />
+        <!-- 宫格分割线的颜色 -->
+        <attr name="combined_dividerColor" format="color" />
+        <!-- 宫格分割线的宽度 -->
+        <attr name="combined_dividerWidth" format="dimension" />
+        <!-- 宫格文本的颜色 -->
+        <attr name="combined_textColor" format="color" />
+        <!-- 只有一个宫格头像文字的大小，多个宫格时根据该值来计算 -->
+        <attr name="combined_textSize" format="dimension" />
+    </declare-styleable>
+
+</resources>

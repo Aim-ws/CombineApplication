@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">CombinedApplication</string>
+    <string name="btn_combined_text">宫格头像</string>
+    <string name="btn_message_bus_text">MessageBus</string>
+    <string name="btn_send_message">发送消息</string>
+    <string name="btn_send_message_thread">Thread发消息</string>
 </resources>

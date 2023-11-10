@@ -9,8 +9,8 @@ import java.util.List;
  * @author wangshuai
  * @version 1.0
  */
-class SubscriberPost {
+class SubscribePost {
     MessageEvent event;
-    List<SubscriberMethod> subscriberMethods;
+    List<SubscribeMethod> subscribeMethods;
 
 }

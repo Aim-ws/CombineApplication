@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
  * @author wangshuai
  * @version 1.0
  */
-class SubscriberMethod {
+class SubscribeMethod {
     private String action;
     private int threadMode;
     private Method method;

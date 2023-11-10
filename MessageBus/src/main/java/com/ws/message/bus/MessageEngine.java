@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class MessageEngine implements Handler.Callback {
     public static final String TAG = "MessageEngine";
-    Map<Class<?>, ArrayList<SubscriberMethod>> mSubscriberMethodMap;
+    Map<Class<?>, ArrayList<SubscribeMethod>> mSubscriberMethodMap;
     LinkedList<MessageEvent> mMessageQueue;
     Handler mHandler;
 
@@ -63,27 +63,27 @@ class MessageEngine implements Handler.Callback {
     }
 
     private void postMessage(MessageEvent event) {
-        List<SubscriberMethod> subscriberMethods = findPostSubscriberMethod(event.getAction());
-        List<SubscriberMethod> uiSubscriberMethods = new ArrayList<>();
-        List<SubscriberMethod> threadMethods = new ArrayList<>();
-        for (SubscriberMethod subscriberMethod : subscriberMethods) {
-            if (ThreadMode.MAIN == subscriberMethod.getThreadMode()) {
+        List<SubscribeMethod> subscribeMethods = findPostSubscriberMethod(event.getAction());
+        List<SubscribeMethod> uiSubscribeMethods = new ArrayList<>();
+        List<SubscribeMethod> threadMethods = new ArrayList<>();
+        for (SubscribeMethod subscribeMethod : subscribeMethods) {
+            if (ThreadMode.MAIN == subscribeMethod.getThreadMode()) {
                 if (isUIThread()) {
-                    uiSubscriberMethods.add(subscriberMethod);
+                    uiSubscribeMethods.add(subscribeMethod);
                 } else {
-                    threadMethods.add(subscriberMethod);
+                    threadMethods.add(subscribeMethod);
                 }
             } else {
-                threadMethods.add(subscriberMethod);
+                threadMethods.add(subscribeMethod);
             }
         }
-        if (!uiSubscriberMethods.isEmpty()) {
-            publishMessageSubscriberMethod(event, uiSubscriberMethods);
+        if (!uiSubscribeMethods.isEmpty()) {
+            publishMessageSubscriberMethod(event, uiSubscribeMethods);
         }
         if (!threadMethods.isEmpty()) {
-            SubscriberPost post = new SubscriberPost();
+            SubscribePost post = new SubscribePost();
             post.event = event;
-            post.subscriberMethods = threadMethods;
+            post.subscribeMethods = threadMethods;
             Message message = Message.obtain(mHandler);
             message.what = 0;
             message.obj = post;
@@ -97,7 +97,7 @@ class MessageEngine implements Handler.Callback {
     private void findSubscriberMethod(@NonNull Object subscriber) {
         Class<?> clz = subscriber.getClass();
         Method[] methods = clz.getMethods();
-        ArrayList<SubscriberMethod> subscriberMethods = new ArrayList<>();
+        ArrayList<SubscribeMethod> subscribeMethods = new ArrayList<>();
         for (Method method : methods) {
             Subscribe methodAnnotation = method.getAnnotation(Subscribe.class);
             Class<?>[] parameterTypes = method.getParameterTypes();
@@ -106,59 +106,59 @@ class MessageEngine implements Handler.Callback {
             if (methodAnnotation != null && checkMethodParameterType(parameterTypes)
                     && modifiers == Modifier.PUBLIC && returnType == void.class) {
                 Class<?> parameterType = parameterTypes.length == 0 ? null : parameterTypes[0];
-                SubscriberMethod subscriberMethod = new SubscriberMethod();
-                subscriberMethod.setAction(methodAnnotation.action());
-                subscriberMethod.setThreadMode(methodAnnotation.threadMode());
-                subscriberMethod.setMethod(method);
-                subscriberMethod.setSubscriber(subscriber);
-                subscriberMethod.setParameterType(parameterType);
-                subscriberMethods.add(subscriberMethod);
+                SubscribeMethod subscribeMethod = new SubscribeMethod();
+                subscribeMethod.setAction(methodAnnotation.action());
+                subscribeMethod.setThreadMode(methodAnnotation.threadMode());
+                subscribeMethod.setMethod(method);
+                subscribeMethod.setSubscriber(subscriber);
+                subscribeMethod.setParameterType(parameterType);
+                subscribeMethods.add(subscribeMethod);
             }
         }
-        mSubscriberMethodMap.put(clz, subscriberMethods);
+        mSubscriberMethodMap.put(clz, subscribeMethods);
     }
 
     /**
      * @param action String
-     * @return List<SubscriberMethod>
+     * @return List<SubscribeMethod>
      */
-    private List<SubscriberMethod> findPostSubscriberMethod(String action) {
-        List<SubscriberMethod> subscriberMethods = new ArrayList<>();
-        for (Map.Entry<Class<?>, ArrayList<SubscriberMethod>> entry : mSubscriberMethodMap.entrySet()) {
-            ArrayList<SubscriberMethod> methods = entry.getValue();
+    private List<SubscribeMethod> findPostSubscriberMethod(String action) {
+        List<SubscribeMethod> subscribeMethods = new ArrayList<>();
+        for (Map.Entry<Class<?>, ArrayList<SubscribeMethod>> entry : mSubscriberMethodMap.entrySet()) {
+            ArrayList<SubscribeMethod> methods = entry.getValue();
             if (methods != null) {
-                for (SubscriberMethod method : methods) {
+                for (SubscribeMethod method : methods) {
                     if (method.getAction().equals(action)) {
-                        subscriberMethods.add(method);
+                        subscribeMethods.add(method);
                     }
                 }
             }
         }
-        return subscriberMethods;
+        return subscribeMethods;
     }
 
     /**
      * @param event   MessageEvent
-     * @param methods List<SubscriberMethod>
+     * @param methods List<SubscribeMethod>
      */
-    private void publishMessageSubscriberMethod(MessageEvent event, List<SubscriberMethod> methods) {
-        for (SubscriberMethod subscriberMethod : methods) {
-            if (findSubscribeMethod(subscriberMethod, event)) {
-                invokeSubscriberMethod(subscriberMethod.getSubscriber(), subscriberMethod.getMethod(), event.getEvent());
+    private void publishMessageSubscriberMethod(MessageEvent event, List<SubscribeMethod> methods) {
+        for (SubscribeMethod subscribeMethod : methods) {
+            if (findSubscribeMethod(subscribeMethod, event)) {
+                invokeSubscriberMethod(subscribeMethod.getSubscriber(), subscribeMethod.getMethod(), event.getEvent());
             } else {
-                Log.d(TAG, "subscribe method parameter type is " + subscriberMethod.getParameterType() +
+                Log.d(TAG, "subscribe method parameter type is " + subscribeMethod.getParameterType() +
                         " not match event type " + (event.getEvent() == null ? "" : event.getEvent().getClass()));
             }
         }
     }
 
     /**
-     * @param subscriberMethod SubscriberMethod
+     * @param subscribeMethod SubscribeMethod
      * @param event            MessageEvent
      * @return boolean
      */
-    private boolean findSubscribeMethod(SubscriberMethod subscriberMethod, MessageEvent event) {
-        Class<?> parameterType = subscriberMethod.getParameterType();
+    private boolean findSubscribeMethod(SubscribeMethod subscribeMethod, MessageEvent event) {
+        Class<?> parameterType = subscribeMethod.getParameterType();
         if (event.getEvent() == null) {
             return parameterType == null;
         }
@@ -220,8 +220,8 @@ class MessageEngine implements Handler.Callback {
 
     @Override
     public boolean handleMessage(@NonNull Message message) {
-        SubscriberPost post = (SubscriberPost) message.obj;
-        publishMessageSubscriberMethod(post.event, post.subscriberMethods);
+        SubscribePost post = (SubscribePost) message.obj;
+        publishMessageSubscriberMethod(post.event, post.subscribeMethods);
         return true;
     }
 }
